@@ -7,7 +7,7 @@
 clear; clc;
 
 % 1. Tentukan Path File CSV
-csvPath = 'gerak_random.csv';
+csvPath = 'turning_otomatis.csv';
 if ~exist(csvPath, 'file')
     error('File %s tidak ditemukan! Pastikan script berada di folder yang sama.', csvPath);
 end

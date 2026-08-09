@@ -7,7 +7,7 @@
 clear; clc; close all;
 
 % 1. Load Data CSV yang Sudah Diperbarui oleh Script 1
-csvPath = 'gerak_random.csv';
+csvPath = 'turning_otomatis.csv';
 if ~exist(csvPath, 'file')
     error('File %s tidak ditemukan! Jalankan script 01_konversi_latlon_ecef_enu.m terlebih dahulu.', csvPath);
 end
