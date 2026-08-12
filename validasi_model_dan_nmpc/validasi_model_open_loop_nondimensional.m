@@ -1,20 +1,27 @@
-%% ============================================================================
-%                          VALIDASI MODEL MATEMATIKA KAPAL
-% * Validasi dilakukan dengan menggunakan sudut kemudi dari data eksperimen 
-% kapal sebagai input pada model kapal yang digunakan.
-% * Model yang digunakan adalah model kapal 2 DOF (sawy dan yaw).
-% * Metode numerik Runge-Kutta orde 4 (RK4) digunakan untuk mengintegrasikan.
-% =============================================================================
+%% =========================================================================
+% VALIDASI MODEL MATEMATIKA KAPAL (OPEN-LOOP SIMULATION)
+% =========================================================================
+
 clear; clc; close all;
-set(0, 'DefaultFigureWindowStyle', 'docked'); % Dock kustomisasi 1 window (tabbed)
 
-fprintf('  SIMULASI VALIDASI MODEL MATEMATIKA KAPAL \n');
-fprintf('================================================================\n\n');
+fprintf('=======================================================\n');
+fprintf('  SIMULASI VALIDASI MODEL MATEMATIKA KAPAL (OPEN-LOOP) \n');
+fprintf('=======================================================\n\n');
 
-%% READ & PREPROCESS DATA EKSPERIMEN CSV
+%% 1. KONTROL PILIHAN SKALA KAPAL (USV VS TANKER)
+% =========================================================================
+% Tipe Kapal:
+%   'USV_RC'  : Menggunakan dimensi asli USV/Boat RC (L ~ 1.2 m, u0 ~ 1.08 m/s)
+%   'TANKER'  : Menggunakan parameter NMPC_Biasa.m (L = 101 m, u0 = 15.4 m/s)
+MODE_KAPAL = 'USV_RC'; 
+
+% Rudder Gain Sign (-1 atau +1 untuk penyesuaian arah kemudi servo)
+RUDDER_GAIN_SIGN = 1; 
+
+%% 2. READ & PREPROCESS DATA EKSPERIMEN CSV
 csvPath = 'gerak_random.csv';
 if ~exist(csvPath, 'file')
-    error('File %s tidak ditemukan! Pastikan script berada di folder yang sama dengan file CSV', csvPath);
+    error('File %s tidak ditemukan! Pastikan script berada di folder validasi_model_dan_nmpc.', csvPath);
 end
 
 fprintf('Membaca data eksperimen dari: %s\n', csvPath);
@@ -24,7 +31,6 @@ if ~ismember('x_enu_flat', data.Properties.VariableNames)
     error('Kolom ENU belum ada. Jalankan script konversi_latlon_ecef_enu.m terlebih dahulu!');
 end
 
-% Waktu
 timestamp = data.timestamp;
 time = timestamp - timestamp(1); % Waktu relatif (detik)
 N = height(data);
@@ -32,9 +38,6 @@ N = height(data);
 % Posisi eksperimen ENU (Meter)
 x_exp = data.x_enu_flat;
 y_exp = data.y_enu_flat;
-
-% Rudder Gain Sign (-1 atau +1 untuk penyesuaian arah kemudi servo)
-RUDDER_GAIN_SIGN = 1; 
 
 % Input servo kemudi (Calc_deg_servo_1) dalam derajat -> konversi ke radian
 delta_deg_exp = RUDDER_GAIN_SIGN * data.Calc_deg_servo_1;
@@ -47,36 +50,38 @@ psi_exp_rad = unwrap(deg2rad(psi_enu_deg));
 
 % Kecepatan surge eksperimen dari GPS (speedMps)
 speed_exp = data.speedMps;
-u_0_exp = mean(speed_exp); % Kecepatan surge rata-rata eksperimen GPS
+u_0_exp = mean(speed_exp);
+if u_0_exp < 0.05, u_0_exp = 1.0; end
 
 fprintf('Data berhasil dimuat. Total sampel: %d | Durasi: %.2f detik\n', N, time(end));
 fprintf('Kecepatan rata-rata eksperimen GPS (u_0): %.4f m/s\n\n', u_0_exp);
 
-%% PARAMETER DAN KOEFISIEN HIDRODINAMIKA KAPAL
-% Parameter Kapal Dari NMPC_Biasa.m
-% L = 101.07;         % Panjang Kapal (m)
-% B = 14;             % Lebar Kapal (m)
-% T = 3.7;            % Draft Kapal (m)
-% m = 2423*1e3;       % Massa Kapal (kg)
-% u_0 = 15.4;         % Kecepatan surge Kapal (m/s)
-% C_B = 0.65;         % Koefisien Blok
-% x_G = 5.25;         % Pusat massa sumbu-x
-% A_delta = 5.7224;   % Luas rudder (m^2)
-% rho = 1024;         % Massa jenis air laut (kg/m^3)
-% r = 0.156*L;        % Kisaran jari-jari girisa
+%% 3. SETUP PARAMETER KAPAL BERDASARKAN MODE
+if strcmpi(MODE_KAPAL, 'USV_RC')
+    % PARAMETER UNTUK PROTOTIPE KAPAL USV RC (SKALA REAL RIL)
+    L = 1.2;            % Panjang USV (m)
+    B = 0.35;           % Lebar USV (m)
+    T = 0.10;           % Draft USV (m)
+    m = 8.5;            % Massa USV (kg)
+    u_0 = u_0_exp;      % Mengikuti kecepatan rata-rata eksperimen (~1.08 m/s)
+    C_B = 0.65;         % Koefisien Blok
+    x_G = 0.05;         % Pusat massa x (m)
+    rho = 1000;         % Massa jenis air tawar/pantai (kg/m^3)
+    fprintf('--> Menggunakan Mode Kapal: USV RC (L = %.2f m, u0 = %.2f m/s)\n', L, u_0);
+else
+    % PARAMETER UNTUK KAPAL TANKER KAMPUS (NMPC_Biasa.m)
+    L = 101.07;         % Panjang Kapal (m)
+    B = 14;             % Lebar Kapal (m)
+    T = 3.7;            % Draft Kapal (m)
+    m = 2423*1e3;       % Massa Kapal (kg)
+    u_0 = 15.4;         % Kecepatan nominal model (m/s)
+    C_B = 0.65;         
+    x_G = 5.25;         
+    rho = 1024;         
+    fprintf('--> Menggunakan Mode Kapal: TANKER LARGE SHIP (L = %.2f m, u0 = %.2f m/s)\n', L, u_0);
+end
 
-% Parameter Kapal Eksperimen
-L = 1.2;            % Panjang kapal (m)
-B = 0.35;           % Lebar kapal (m)
-T = 0.10;           % Draft kapal (m)
-m = 8.5;            % Massa kapal (kg)
-u_0 = u_0_exp;      % Kecepatan surge kapal (mengikuti kecepatan rata-rata eksperimen)
-C_B = 0.65;         % Koefisien Blok
-x_G = 0.05;         % Pusat massa sumbu-x
-rho = 1000;         % Massa jenis air tawar/pantai (kg/m^3)
-r = 0.156*L;        % Kisaran jari-jari girisa
-
-% Koefisien Hidrodinamika Nondimensional
+% Koefisien Hidrodinamika Nondimensional (Fossen / Abkowitz)
 Y_v_dot = -(1 + 0.16*C_B*B/T - 5.1*(B/L)^2)*pi*(T/L)^2;
 Y_r_dot = -(0.67*(B/L) - 0.0033*(B/T)^2)*pi*(T/L)^2;
 N_v_dot = -(1.1*B/L - 0.041*B/T)*pi*(T/L)^2;
@@ -105,42 +110,41 @@ A_sys = [a11 , a12 ;
 B_sys = [0.01 ;
          1];
 
-%% EKSEKUSI VALIDASI MODEL MATEMATIKA
-history_state_sim_nd = zeros(5, N);
+%% 4. EKSEKUSI SIMULASI OPEN-LOOP (RK4 INTEGRATOR)
+history_state_sim = zeros(5, N);
 
 % Inisialisasi kondisi awal simulasi sesuai dengan data eksperimen t=0
-s0_dim = [0; 0; x_exp(1); y_exp(1); psi_exp_rad(1)];
-s0_nd = dimensional_to_nondimensional(s0_dim, L, u_0);
-history_state_sim_nd(:, 1) = s0_nd;
+s0_sim = [0; 0; x_exp(1); y_exp(1); psi_exp_rad(1)];
+history_state_sim(:, 1) = s0_sim;
 
-s_nd = s0_nd;
+s_sim = s0_sim;
 
-fprintf('Menjalankan integrasi Runge-Kutta 4th Order (RK4) \n');
+fprintf('Menjalankan integrasi Runge-Kutta 4th Order (RK4) Open-Loop...\n');
 for k = 1:N-1
     dt = time(k+1) - time(k);
     if dt <= 0, dt = 0.1; end
     
-    dt_nd = dt * u_0 / L;
+    % dt_nd = dt * u_0 / L;
     u_applied = delta_rad_exp(k); % Input servo kemudi dari data RC
     
     % Integrasi RK4
-    s_nd = rk4_step(@(s, u) ship_dynamics(s, u, A_sys, B_sys, u_0_nd), s_nd, u_applied, dt_nd);
-    history_state_sim_nd(:, k+1) = s_nd;
+    s_sim = rk4_step(@(s, u) ship_dynamics(s, u, A_sys, B_sys, u_0_nd), s_sim, u_applied, dt);
+    history_state_sim(:, k+1) = s_sim;
 end
 
 % Konversi seluruh state hasil simulasi dari nondimensional ke dimensional
-history_state_sim_dim = zeros(5, N);
-for i = 1:N
-    history_state_sim_dim(:, i) = nondimensional_to_dimensional(history_state_sim_nd(:, i), L, u_0);
-end
+% history_state_sim_dim = zeros(5, N);
+% for i = 1:N
+%     history_state_sim_dim(:, i) = nondimensional_to_dimensional(history_state_sim_nd(:, i), L, u_0);
+% end
 
-v_sim = history_state_sim_dim(1, :)';
-r_sim = history_state_sim_dim(2, :)';
-x_sim = history_state_sim_dim(3, :)';
-y_sim = history_state_sim_dim(4, :)';
-psi_sim_rad = history_state_sim_dim(5, :)';
+v_sim = history_state_sim(1, :)';
+r_sim = history_state_sim(2, :)';
+x_sim = history_state_sim(3, :)';
+y_sim = history_state_sim(4, :)';
+psi_sim_rad = history_state_sim(5, :)';
 
-%% PERHITUNGAN RMSE
+%% 5. PERHITUNGAN METRIK EVALUASI GALAT (RMSE, MAE, R^2)
 err_x = x_exp - x_sim;
 err_y = y_exp - y_sim;
 err_pos_2d = sqrt(err_x.^2 + err_y.^2);
@@ -148,23 +152,34 @@ err_pos_2d = sqrt(err_x.^2 + err_y.^2);
 rmse_x = sqrt(mean(err_x.^2));
 rmse_y = sqrt(mean(err_y.^2));
 rmse_pos_2d = sqrt(mean(err_pos_2d.^2));
+mae_pos_2d = mean(err_pos_2d);
 
 err_psi_rad = psi_exp_rad - psi_sim_rad;
 rmse_psi_rad = sqrt(mean(err_psi_rad.^2));
 rmse_psi_deg = rad2deg(rmse_psi_rad);
 
+R2_x = 1 - (sum(err_x.^2) / sum((x_exp - mean(x_exp)).^2));
+R2_y = 1 - (sum(err_y.^2) / sum((y_exp - mean(y_exp)).^2));
+
 fprintf('\n=======================================================\n');
-fprintf('         HASIL RMSE MODEL DENGAN DATA EKSPERIMEN            \n');
+fprintf('         HASIL EVALUASI METRIK GALAT MODEL             \n');
 fprintf('=======================================================\n');
+fprintf('Mode Kapal          : %s\n', MODE_KAPAL);
+fprintf('Panjang Kapal (L)   : %.2f meter\n', L);
+fprintf('Kecepatan (u_0)     : %.2f m/s\n', u_0);
+fprintf('-------------------------------------------------------\n');
 fprintf('RMSE Posisi X       : %.4f meter\n', rmse_x);
 fprintf('RMSE Posisi Y       : %.4f meter\n', rmse_y);
 fprintf('RMSE Posisi 2D      : %.4f meter\n', rmse_pos_2d);
+fprintf('MAE Posisi 2D       : %.4f meter\n', mae_pos_2d);
 fprintf('RMSE Yaw Heading    : %.4f rad (%.2f derajat)\n', rmse_psi_rad, rmse_psi_deg);
+fprintf('R^2 Posisi X        : %.4f\n', R2_x);
+fprintf('R^2 Posisi Y        : %.4f\n', R2_y);
 fprintf('=======================================================\n\n');
 
-%% VISUALISASI GRAFIK HASIL VALIDASI
+%% 6. VISUALISASI GRAFIK HASIL VALIDASI
 % FIGURE 1: Perbandingan Lintasan 2D (Eksperimen vs Simulasi Model)
-figure('Name', '1. Validasi Lintasan 2D Kapal', 'NumberTitle', 'off', 'WindowStyle', 'docked');
+figure('Name', '1. Validasi Lintasan 2D Kapal', 'NumberTitle', 'off', 'Position', [100, 100, 850, 650]);
 plot(x_exp, y_exp, 'b-', 'LineWidth', 2.0); hold on;
 plot(x_sim, y_sim, 'r--', 'LineWidth', 2.0);
 plot(x_exp(1), y_exp(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g'); % Start
@@ -172,56 +187,60 @@ plot(x_exp(end), y_exp(end), 'ks', 'MarkerSize', 10, 'MarkerFaceColor', 'k'); % 
 grid on; axis equal;
 xlabel('Posisi East X [meter]', 'FontSize', 11, 'FontWeight', 'bold');
 ylabel('Posisi North Y [meter]', 'FontSize', 11, 'FontWeight', 'bold');
-title('Validasi Open-Loop: Lintasan Eksperimen vs Simulasi Model', 'FontSize', 12, 'FontWeight', 'bold');
-legend('Data Eksperimen', 'Simulasi Model Matematika', 'Titik Awal (Start)', 'Titik Akhir', 'Location', 'best');
+title(sprintf('Validasi Open-Loop: Lintasan Eksperimen RC vs Simulasi Model (Mode: %s)', MODE_KAPAL), 'FontSize', 12, 'FontWeight', 'bold');
+legend('Data Eksperimen (RC)', 'Simulasi Model Matematika', 'Titik Awal (Start)', 'Titik Akhir', 'Location', 'best');
 
 % FIGURE 2: Perbandingan Posisi X dan Y terhadap Waktu
-figure('Name', '2. Respon Posisi X dan Y', 'NumberTitle', 'off', 'WindowStyle', 'docked');
+figure('Name', '2. Respon Posisi X dan Y', 'NumberTitle', 'off', 'Position', [150, 150, 900, 600]);
 subplot(2,1,1);
 plot(time, x_exp, 'b-', 'LineWidth', 1.8); hold on;
 plot(time, x_sim, 'r--', 'LineWidth', 1.8);
 grid on; ylabel('Posisi X (East) [m]', 'FontWeight', 'bold');
-title(sprintf('Respon Posisi X (RMSE = %.3f m)', rmse_x));
+title(sprintf('Respon Posisi X (RMSE = %.3f m, R^2 = %.3f)', rmse_x, R2_x));
 legend('Eksperimen', 'Simulasi Model');
 
 subplot(2,1,2);
 plot(time, y_exp, 'b-', 'LineWidth', 1.8); hold on;
 plot(time, y_sim, 'r--', 'LineWidth', 1.8);
 grid on; xlabel('Waktu [detik]', 'FontWeight', 'bold'); ylabel('Posisi Y (North) [m]', 'FontWeight', 'bold');
-title(sprintf('Respon Posisi Y (RMSE = %.3f m)', rmse_y));
+title(sprintf('Respon Posisi Y (RMSE = %.3f m, R^2 = %.3f)', rmse_y, R2_y));
 legend('Eksperimen', 'Simulasi Model');
 
 % FIGURE 3: Perbandingan Sudut Yaw (Heading) & Yaw Rate
-figure('Name', '3. Respon Yaw Heading & Yaw Rate', 'NumberTitle', 'off', 'WindowStyle', 'docked');
+figure('Name', '3. Respon Yaw Heading & Yaw Rate', 'NumberTitle', 'off', 'Position', [200, 200, 900, 600]);
 subplot(2,1,1);
 plot(time, rad2deg(psi_exp_rad), 'b-', 'LineWidth', 1.8); hold on;
 plot(time, rad2deg(psi_sim_rad), 'r--', 'LineWidth', 1.8);
 grid on; ylabel('Yaw Angle [derajat]', 'FontWeight', 'bold');
-title(sprintf('Perbandingan Sudut Yaw Heading (RMSE = %.2f deg)', rmse_psi_deg));
-legend('Eksperimen', 'Simulasi Model');
+title(sprintf('Perbandingan Sudut Yaw Heading \\psi (RMSE = %.2f deg)', rmse_psi_deg));
+legend('Eksperimen (IMU)', 'Simulasi Model');
 
 subplot(2,1,2);
 plot(time, rad2deg(r_sim), 'm-', 'LineWidth', 1.5);
-grid on; xlabel('Waktu [detik]', 'FontWeight', 'bold'); ylabel('Yaw Rate [deg/s]', 'FontWeight', 'bold');
-title('Kecepatan Sudut Putar Kapal (Yaw Rate) Hasil Simulasi Model');
+grid on; xlabel('Waktu [detik]', 'FontWeight', 'bold'); ylabel('Yaw Rate r [deg/s]', 'FontWeight', 'bold');
+title('Kecepatan Sudut Putar Kapal (Yaw Rate r) Hasil Simulasi Model');
 
 % FIGURE 4: Input Sinyal Kontrol Kemudi (Servo Rudder)
-figure('Name', '4. Input Sinyal Kontrol RC', 'NumberTitle', 'off', 'WindowStyle', 'docked');
+figure('Name', '4. Input Sinyal Kontrol RC', 'NumberTitle', 'off', 'Position', [250, 250, 850, 450]);
 plot(time, delta_deg_exp, 'k-', 'LineWidth', 1.5);
-grid on; xlabel('Waktu [detik]', 'FontWeight', 'bold'); ylabel('Sudut Rudder [derajat]', 'FontWeight', 'bold');
-title('Input Sinyal Kemudi Eksperimen yang Diaplikasikan ke Model');
+grid on; xlabel('Waktu [detik]', 'FontWeight', 'bold'); ylabel('Sudut Rudder \\delta [derajat]', 'FontWeight', 'bold');
+title('Input Sinyal Kemudi RC (Calc\\_deg\\_servo\\_1) yang Diaplikasikan ke Model');
 
 % FIGURE 5: Grafik Eror Jarak Posisi 2D (Euclidean Error)
-figure('Name', '5. Eror Jarak Posisi 2D', 'NumberTitle', 'off', 'WindowStyle', 'docked');
+figure('Name', '5. Eror Jarak Posisi 2D', 'NumberTitle', 'off', 'Position', [300, 300, 850, 450]);
 plot(time, err_pos_2d, 'r-', 'LineWidth', 1.5); hold on;
 yline(rmse_pos_2d, 'b--', sprintf('RMSE 2D = %.3f m', rmse_pos_2d), 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
+yline(mae_pos_2d, 'g--', sprintf('MAE 2D = %.3f m', mae_pos_2d), 'LineWidth', 1.5, 'LabelVerticalAlignment', 'top');
 grid on; xlabel('Waktu [detik]', 'FontWeight', 'bold'); ylabel('Galat Jarak [meter]', 'FontWeight', 'bold');
 title('Galat Jarak Posisi 2D (Euclidean Distance Error) Open-Loop Simulation');
-legend('Eror Jarak per Detik', 'Nilai RMSE 2D');
+legend('Eror Jarak per Detik', 'Nilai RMSE 2D', 'Nilai MAE 2D');
 
-fprintf('Validasi Selesai! \n');
+fprintf('Validasi Selesai! Semua grafik hasil simulasi berhasil ditampilkan.\n');
 
-%% FUNGSI INTEGRATOR RK4 & DINAMIKA KAPAL
+%% =========================================================================
+% FUNGSI INTEGRATOR RK4 & DINAMIKA KAPAL
+% =========================================================================
+
 function x_next = rk4_step(f, x, u, dt)
     k1 = f(x, u);
     k2 = f(x + 0.5 * dt * k1, u);
@@ -230,7 +249,6 @@ function x_next = rk4_step(f, x, u, dt)
     x_next = x + (dt / 6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4);
 end
 
-%% FUNGSI DINAMIKA KAPAL
 function s_dot = ship_dynamics(s, u, A_sys, B_sys, u0_nd)
     v = s(1); 
     r = s(2); 
@@ -243,10 +261,10 @@ function s_dot = ship_dynamics(s, u, A_sys, B_sys, u0_nd)
     s_dot = [v_r_dot(1); v_r_dot(2); x_dot; y_dot; r];
 end
 
-%% FUNGSI KONVERSI DIMENSIONAL DAN NONDIMENSIONAL
 function x_nd = dimensional_to_nondimensional(x, L, u0)
     x_nd = [x(1)/u0; x(2)*L/u0; x(3)/L; x(4)/L; x(5)];
 end
+
 function x_dim = nondimensional_to_dimensional(x, L, u0)
     x_dim = [x(1)*u0; x(2)*u0/L; x(3)*L; x(4)*L; x(5)];
 end
