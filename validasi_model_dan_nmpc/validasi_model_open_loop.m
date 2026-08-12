@@ -34,7 +34,8 @@ x_exp = data.x_enu_flat;
 y_exp = data.y_enu_flat;
 
 % Rudder Gain Sign (-1 atau +1 untuk penyesuaian arah kemudi servo)
-RUDDER_GAIN_SIGN = 1; 
+% Konversi arah
+RUDDER_GAIN_SIGN = 1;
 
 % Input servo kemudi (Calc_deg_servo_1) dalam derajat -> konversi ke radian
 delta_deg_exp = RUDDER_GAIN_SIGN * data.Calc_deg_servo_1;

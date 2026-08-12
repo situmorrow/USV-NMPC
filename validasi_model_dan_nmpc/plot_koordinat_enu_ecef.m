@@ -1,22 +1,25 @@
-%% =========================================================================
-% SCRIPT 2: PLOTTING HASIL KONVERSI KOORDINAT ENU (FLAT), ENU (ECEF), DAN ECEF
-% Percobaan Kapal Autonomous - USV NMPC
-% Folder: d:\2026\Percobaan_Kapal_Autonomous\USV-NMPC\validasi_model_dan_nmpc
-% =========================================================================
-
+% ==============================================================================================
+%                          PLOTTING HASIL KONVERSI KOORDINAT
+% * Plot terdiri dari:
+%   (1) Lintasan Kapal ENU (LatLon -> ENU)
+%   (2) Lintasan Kapal ENU (LatLon -> ECEF -> ENU)
+%   (3) Lintasan Kapal dalam Koordinat 3D ECEF
+%   (4) Perbandingan ENU Flat vs ECEF->ENU
+% ===============================================================================================
 clear; clc; close all;
+set(0, 'DefaultFigureWindowStyle', 'docked'); % Dock kustomisasi 1 window (tabbed)
 
-% 1. Load Data CSV yang Sudah Diperbarui oleh Script 1
+%% READ & PREPROCESS DATA EKSPERIMEN CSV
 csvPath = 'turning_otomatis.csv';
 if ~exist(csvPath, 'file')
-    error('File %s tidak ditemukan! Jalankan script 01_konversi_latlon_ecef_enu.m terlebih dahulu.', csvPath);
+    error('File %s tidak ditemukan! Pastikan script berada di folder yang sama dengan file CSV.', csvPath);
 end
 
 data = readtable(csvPath);
 
 % Pastikan kolom konversi sudah ada di CSV
 if ~ismember('x_enu_flat', data.Properties.VariableNames)
-    error('Kolom konversi belum ada di CSV. Jalankan 01_konversi_latlon_ecef_enu.m terlebih dahulu!');
+    error('Kolom konversi belum ada di CSV. Jalankan konversi_latlon_ecef_enu.m terlebih dahulu!');
 end
 
 % Extract Data
@@ -32,10 +35,16 @@ Z_ecef = data.Z_ecef;
 
 timestamp = data.timestamp;
 
-%% =========================================================================
+%% EVALUASI SELISIH ANTARA KEDUA METODE
+diff_x = abs(x_flat - x_ecef_enu);
+diff_y = abs(y_flat - y_ecef_enu);
+max_diff_m = max(sqrt(diff_x.^2 + diff_y.^2));
+
+fprintf('\n=== EVALUASI PERBEDAAAN METODE ===\n');
+fprintf('Max Selisih Position ENU (Flat vs ECEF->ENU): %.6f meter (%.2f mm)\n\n', max_diff_m, max_diff_m * 1000);
+
 % PLOT 1: PLOT ENU HASIL DARI LATLON -> ENU (FLAT-EARTH)
-% =========================================================================
-figure('Name', '1. Plot ENU (Direct LatLon -> ENU)', 'NumberTitle', 'off', 'Position', [100, 100, 800, 600]);
+figure('Name', '1. Plot ENU (Direct LatLon -> ENU)', 'NumberTitle', 'off', 'WindowStyle', 'docked');
 plot(x_flat, y_flat, 'b-', 'LineWidth', 1.8); hold on;
 plot(x_flat(1), y_flat(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g'); % Start
 plot(x_flat(end), y_flat(end), 'rs', 'MarkerSize', 10, 'MarkerFaceColor', 'r'); % End
@@ -45,10 +54,8 @@ ylabel('North (y) [meter]', 'FontSize', 11, 'FontWeight', 'bold');
 title('Lintasan Kapal ENU (Metode Direct LatLon \rightarrow ENU Flat-Earth)', 'FontSize', 12, 'FontWeight', 'bold');
 legend('Lintasan Kapal', 'Start Point (Home)', 'End Point', 'Location', 'best');
 
-%% =========================================================================
 % PLOT 2: PLOT ENU HASIL DARI LATLON -> ECEF -> ENU (RIGOROUS WGS84)
-% =========================================================================
-figure('Name', '2. Plot ENU (LatLon -> ECEF -> ENU)', 'NumberTitle', 'off', 'Position', [150, 150, 800, 600]);
+figure('Name', '2. Plot ENU (LatLon -> ECEF -> ENU)', 'NumberTitle', 'off', 'WindowStyle', 'docked');
 plot(x_ecef_enu, y_ecef_enu, 'r-', 'LineWidth', 1.8); hold on;
 plot(x_ecef_enu(1), y_ecef_enu(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g'); % Start
 plot(x_ecef_enu(end), y_ecef_enu(end), 'rs', 'MarkerSize', 10, 'MarkerFaceColor', 'r'); % End
@@ -58,10 +65,8 @@ ylabel('North (y) [meter]', 'FontSize', 11, 'FontWeight', 'bold');
 title('Lintasan Kapal ENU (Metode LatLon \rightarrow ECEF \rightarrow ENU WGS84)', 'FontSize', 12, 'FontWeight', 'bold');
 legend('Lintasan Kapal', 'Start Point (Home)', 'End Point', 'Location', 'best');
 
-%% =========================================================================
 % PLOT 3: PLOT KOORDINAT 3D ECEF (X, Y, Z)
-% =========================================================================
-figure('Name', '3. Plot 3D ECEF', 'NumberTitle', 'off', 'Position', [200, 200, 850, 650]);
+figure('Name', '3. Plot 3D ECEF', 'NumberTitle', 'off', 'WindowStyle', 'docked');
 plot3(X_ecef, Y_ecef, Z_ecef, 'm-', 'LineWidth', 1.8); hold on;
 plot3(X_ecef(1), Y_ecef(1), Z_ecef(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g');
 plot3(X_ecef(end), Y_ecef(end), Z_ecef(end), 'rs', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
@@ -73,10 +78,8 @@ title('Lintasan Kapal dalam Koordinat 3D ECEF (Earth-Centered Earth-Fixed)', 'Fo
 legend('Lintasan ECEF', 'Start Point', 'End Point', 'Location', 'best');
 view(45, 30);
 
-%% =========================================================================
-% PLOT 4 (BONUS): COMPARISON OVERLAY & ERROR DIFFERENCE (MM)
-% =========================================================================
-figure('Name', '4. Perbandingan ENU Flat vs ECEF->ENU', 'NumberTitle', 'off', 'Position', [250, 250, 950, 700]);
+% PLOT 4: COMPARISON OVERLAY & ERROR DIFFERENCE (MM)
+figure('Name', '4. Perbandingan ENU Flat vs ECEF->ENU', 'NumberTitle', 'off', 'WindowStyle', 'docked');
 
 % Subplot A: Overlay Lintasan
 subplot(2, 1, 1);
@@ -95,5 +98,3 @@ grid on;
 xlabel('Waktu [detik]'); ylabel('Selisih Eror Jarak [mm]');
 title('Selisih Perbedaan Hasil ENU Antara Kedua Metode (Skala Milimeter)');
 ylim([0, max(err_dist_mm)*1.2 + 0.1]);
-
-fprintf('Finished plotting successfully!\n');
