@@ -1,0 +1,73 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}          % Diperlukan untuk opsi penempatan [H] pada table
+\usepackage[table]{xcolor}  % Untuk pewarnaan baris header tabel
+\usepackage{enumitem}       % Untuk mengatur margin list algoritma agar rapi
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm}
+
+% Fallback jika biblatex belum dimuat
+\providecommand{\parencite}[1]{(\cite{#1})}
+
+\begin{document}
+
+\section{Penskalaan Froude}
+
+Untuk mendapatkan spesifikasi kapal model, dilakukan perhitungan penskalaan berdasarkan hukum kesamaan Froude \parencite{moreira2007path}. Aturan penskalaan Froude untuk berbagai besaran fisik disajikan secara rinci pada Tabel~\ref{tab:froude_scaling}.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Penskalaan Froude Berbagai Besaran Fisik}
+\label{tab:froude_scaling}
+\begin{tabular}{llc}
+\toprule
+\textbf{Jenis Besaran} & \textbf{Satuan} & \textbf{Parameter Penskalaan} \\
+\midrule
+Panjang & $\text{m}$ & $k$ \\
+Waktu & $\text{s}$ & $k^{1/2}$ \\
+Frekuensi & $\text{s}^{-1}$ & $k^{-1/2}$ \\
+Kecepatan & $\text{m/s}$ & $k^{1/2}$ \\
+Percepatan & $\text{m/s}^2$ & $1$ \\
+Volume & $\text{m}^3$ & $k^3$ \\
+Massa jenis air & $\text{ton/m}^3$ & $r$ \\
+Massa & $\text{ton}$ & $r k^3$ \\
+Gaya & $\text{kN}$ & $r k^3$ \\
+Momen & $\text{kN}\cdot\text{m}$ & $r k^4$ \\
+Kekakuan eksistensi & $\text{kN/m}$ & $r k^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Berdasarkan aturan penskalaan Froude pada Tabel~\ref{tab:froude_scaling} dengan faktor skala panjang $k = 100$ (skala $1:100$) dan rasio massa jenis $r = 1$, hasil penskalaan untuk model kapal \textit{Extended} Korvet SIGMA disajikan pada Tabel~\ref{tab:hasil_penskalaan_100}.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Hasil Penskalaan Kapal Model \textit{Extended} Korvet SIGMA (Skala 1:100)}
+\label{tab:hasil_penskalaan_100}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Parameter} & \textbf{Notasi} & \textbf{Nilai Asli (\textit{Full Scale})} & \textbf{Nilai Model} \\
+\midrule
+Panjang Kapal ($L_{pp}$) & $L$ & $101{,}07\text{ m}$ & $1{,}0107\text{ m}$ \\
+Lebar Kapal & $B$ & $14{,}00\text{ m}$ & $0{,}14\text{ m}$ ($14\text{ cm}$) \\
+Sarat Air (Kedalaman) & $d$ & $3{,}70\text{ m}$ & $0{,}037\text{ m}$ ($3{,}7\text{ cm}$) \\
+Massa Kapal & $m$ & $2.423.000\text{ kg}$ & $2{,}423\text{ kg}$ \\
+Kecepatan Surge & $u_0$ & $15{,}40\text{ m/s}$ & $1{,}54\text{ m/s}$ \\
+Waktu & $t$ & $1\text{ s}$ & $0{,}1\text{ s}$ \\
+Frekuensi & $f$ & $1\text{ Hz}$ & $10\text{ Hz}$ \\
+Massa Jenis Air & $\rho$ & $1024\text{ kg/m}^3$ & $1024\text{ kg/m}^3$ \\
+Luas Kemudi (\textit{Rudder}) & $A_\delta$ & $5{,}7224\text{ m}^2$ & $0{,}000572\text{ m}^2$ ($5{,}72\text{ cm}^2$) \\
+Pusat Massa Sumbu-$x$ & $x_G$ & $5{,}25\text{ m}$ & $0{,}0525\text{ m}$ ($5{,}25\text{ cm}$) \\
+Jari-jari Girasi & $r$ & $15{,}76692\text{ m}$ & $0{,}1577\text{ m}$ ($15{,}77\text{ cm}$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
