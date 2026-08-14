@@ -3,7 +3,7 @@
 % * Proses ini mengubah data Latitude dan Longitude menjadi koordinat ENU (East, North, Up)
 %   menggunakan dua metode berbeda untuk perbandingan, yaitu:
 %   (1) LAT/LON -> ENU (Flat-Earth)
-%   (2) LAT/LON -> ECEF -> ENU (WGS84 Rigorous Transformation) 
+%   (2) LAT/LON -> ECEF -> ENU (WGS84 Rigorous Transformation)
 % * Origin/Reference Point (Titik Awal) ditetapkan berdasarkan titik pertama dari data CSV.
 % * Hasil konversi dari kedua metode kemudian ditambahkan sebagai kolom baru pada file CSV
 %   yang sama untuk kemudahan analisis lebih lanjut.

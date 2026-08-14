@@ -47,6 +47,9 @@ B_sys = [0.01 ; 1];
 Posisi_Awal_Lat = -34.603722; 
 Posisi_Awal_Lon = -58.381592;
 Heading_Awal_deg = -320; % Heading awal (derajat)
+% Posisi_Awal_Lat = -7.28715; 
+% Posisi_Awal_Lon = 112.79600;
+% Heading_Awal_deg = -320; % Heading awal (derajat)
 
 % Daftar Waypoint (Latitude, Longitude)
 % waypoints_geo = [
@@ -61,6 +64,12 @@ waypoints_geo = [
     -34.600125, -58.375036;   % Waypoint 3 (ENU: X =  600.00 m, Y =  400.00 m)
     -34.603722, -58.381592    % Waypoint 4 (ENU: X =    0.00 m, Y =    0.00 m)
 ];
+% waypoints_geo = [
+%     -7.28675, 112.79600;   % WP 1: Penyempitan Tengah
+%     -7.28630, 112.79600;   % WP 2: Kolam Utara
+%     -7.28675, 112.79610;   % WP 3: Sisi Timur Tengah
+%     -7.28715, 112.79600    % WP 4: Kolam Selatan (Kembali ke titik awal)
+% ];
 
 num_waypoints = size(waypoints_geo, 1);
 

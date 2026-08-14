@@ -12,7 +12,7 @@ fprintf('  SIMULASI VALIDASI MODEL MATEMATIKA KAPAL \n');
 fprintf('================================================================\n\n');
 
 %% READ & PREPROCESS DATA EKSPERIMEN CSV
-csvPath = 'gerak_random.csv';
+csvPath = 'turning_otomatis.csv';
 if ~exist(csvPath, 'file')
     error('File %s tidak ditemukan! Pastikan script berada di folder yang sama dengan file CSV', csvPath);
 end
