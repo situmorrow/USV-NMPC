@@ -10,7 +10,7 @@ clear; clc; close all;
 set(0, 'DefaultFigureWindowStyle', 'docked'); % Dock kustomisasi 1 window (tabbed)
 
 %% READ & PREPROCESS DATA EKSPERIMEN CSV
-csvPath = 'Cleaning_Data.csv';
+csvPath = 'DATA_FIKS.csv';
 if ~exist(csvPath, 'file')
     error('File %s tidak ditemukan! Pastikan script berada di folder yang sama dengan file CSV.', csvPath);
 end
