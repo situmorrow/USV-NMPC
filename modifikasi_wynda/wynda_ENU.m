@@ -6,14 +6,13 @@ close all;
 %% ==============================
 % LOAD DATA
 %% ==============================
-DATAMSD = readmatrix('DATA_UNTUK_WYNDA.xlsx','Sheet','Lembar2')';
-% DATAMSD = DATAMSD(:,55:200);
+DATAMSD = readmatrix('hasil_preprocessing_ENU.xlsx','Sheet','Sheet1')';
 
 %% ==============================
 % PARAMETER REFERENSI
 %% ==============================
-L = 1.0107;      % meter
-U = 0.5923;      % m/s (kecepatan maju/surge rata-rata eksperimen GPS)
+L = 1.0107;              % meter
+U = DATAMSD(7,1);        % m/s
 
 %% ==============================
 % NONDIMENSIONALISASI
@@ -23,16 +22,16 @@ U = 0.5923;      % m/s (kecepatan maju/surge rata-rata eksperimen GPS)
 % 4 = y (m)
 % 5 = psi (rad)
 % 6 = delta (rad)
-% 7 = rpm
+% 7 = u_exp (m/s)
 %% ==============================
 
 DATAMSD(1,:) = DATAMSD(1,:) / U;        % v'
 DATAMSD(2,:) = DATAMSD(2,:) * L / U;    % r'
 DATAMSD(3,:) = DATAMSD(3,:) / L;        % x'
 DATAMSD(4,:) = DATAMSD(4,:) / L;        % y'
-
-rpm_all = DATAMSD(7,:);
-rpm_all = rpm_all / max(abs(rpm_all));  % scaling rpm sekali saja
+DATAMSD(5,:) = DATAMSD(5,:);            % psi'
+DATAMSD(6,:) = DATAMSD(6,:);            % delta'
+DATAMSD(7,:) = DATAMSD(7,:) / U;        % u_exp'
 
 %% ==============================
 % Tampilkan Nilai Awal Sebelum & Sesudah Nondimensional
@@ -47,12 +46,16 @@ r_dim   = DATAMSD(2,1) * U / L;
 x_dim   = DATAMSD(3,1) * L;
 y_dim   = DATAMSD(4,1) * L;
 psi_dim = DATAMSD(5,1);
+delta_dim = DATAMSD(6,1);
+u_dim   = DATAMSD(7,1) * U;
 
 fprintf('v  (m/s)   = %.6f\n', v_dim);
 fprintf('r  (rad/s) = %.6f\n', r_dim);
 fprintf('x  (m)     = %.6f\n', x_dim);
 fprintf('y  (m)     = %.6f\n', y_dim);
 fprintf('psi (rad)  = %.6f\n', psi_dim);
+fprintf('delta (rad)= %.6f\n', delta_dim);
+fprintf('u  (m/s)   = %.6f\n', u_dim);
 
 disp(' ')
 disp('==============================================')
@@ -64,27 +67,9 @@ fprintf('r''   = %.6f\n', DATAMSD(2,1));
 fprintf('x''   = %.6f\n', DATAMSD(3,1));
 fprintf('y''   = %.6f\n', DATAMSD(4,1));
 fprintf('psi  = %.6f\n', DATAMSD(5,1));
+fprintf('delta'' = %.6f\n', DATAMSD(6,1));
+fprintf('u''   = %.6f\n', DATAMSD(7,1));
 
-%% ==============================
-% Scaling Rudder dan RPM
-%% ==============================
-
-delta_dim = DATAMSD(6,1);          % rad (sudah dimensional)
-rpm_dim   = DATAMSD(7,1);          % rpm asli
-
-% --- Nondimensional ---
-delta_nd = delta_dim;              % rad sudah nondimensional
-rpm_nd   = rpm_dim / max(abs(DATAMSD(7,:)));  % scaling relatif
-
-disp('==============================================')
-disp('RUDDER & RPM (Dimensional dan Nondimensional)')
-disp('==============================================')
-
-fprintf('delta_dim (rad) = %.6f\n', delta_dim);
-fprintf('delta_nd        = %.6f\n', delta_nd);
-
-fprintf('rpm_dim         = %.6f\n', rpm_dim);
-fprintf('rpm_nd          = %.6f\n', rpm_nd);
 %% ==============================
 % SIMULATION HORIZON
 %% ==============================
@@ -112,7 +97,7 @@ fprintf('Total waktu nondimensional       = %.6f \n', t(end));
 % STATE & PARAMETER INIT
 %% ==============================
 n = 5;
-r = 22;
+r = 11;
 
 s = DATAMSD(1:5,1);
 sbar = s;
@@ -127,73 +112,74 @@ thetabarArray = [];
 uArray        = [];
 
 %% ==============================
-% ESTIMATOR PARAMETER & TUNING
+% ESTIMATOR PARAMETER
 %% ==============================
-Rs = 0.01*eye(n);
-Rt = 0.01*eye(n);
+lambdav = 0.3;
+lambdat = 0.8;
+
+Rs = eye(n);
+Rt = eye(n);
 Ps = 0.1*eye(n);
-Pt = 10.0*eye(r);
+Pt = 0.1*eye(r);
 Gamma = zeros(n,r);
 
-num_epochs = 5; % Multi-epoch pass agar estimasi konvergen stabil
-
 %% ==============================
-% MAIN ESTIMATION LOOP
+% MAIN LOOP
 %% ==============================
-for ep = 1:num_epochs
-    sbar = DATAMSD(1:5,1);
-    Gamma = zeros(n,r);
-    sArray        = [];
-    sbarArray     = [];
-    thetabarArray = [];
-    uArray        = [];
+for i = 1:N
 
-    for i = 1:N
-        y = DATAMSD(1:5,i);
-        delta = DATAMSD(6,i);
-        rpm   = rpm_all(i);
+    y = DATAMSD(1:5,i);
+    delta = DATAMSD(6,i);
 
-        sArray        = [sArray s];
-        sbarArray     = [sbarArray sbar];
-        thetabarArray = [thetabarArray thetabar];
-        u = [delta; rpm];
-        uArray        = [uArray u];
+    sArray        = [sArray s];
+    sbarArray     = [sbarArray sbar];
+    thetabarArray = [thetabarArray thetabar];
+    u = delta;
+    uArray        = [uArray u];
 
-        % ===== BASIS FUNCTION =====
-        Phi = [
-            % ---- Eq 1 ---- (8 + 14 = 22)
-            y(1) y(2) y(1)^3 (y(1)^2)*y(2) y(1)*(y(2)^2) y(2)^3 ...
-            sec(delta) y(2) zeros(1,14);
+    % ===== BASIS FUNCTION (11 Parameter Theta) =====
+    % Sesuai Persamaan (4.27) - (4.31):
+    % Eq (4.27) -> v_dot   = theta_1*v + theta_2*r + theta_3*delta
+    % Eq (4.28) -> r_dot   = theta_4*v + theta_5*r + theta_6*delta
+    % Eq (4.29) -> x_dot   = theta_7*u0*cos(psi) - theta_8*v*sin(psi)
+    % Eq (4.30) -> y_dot   = theta_9*u0*sin(psi) + theta_10*v*cos(psi)
+    % Eq (4.31) -> psi_dot = theta_11*r
 
-            % ---- Eq 2 ---- (8 + 9 + 5 = 22)
-            zeros(1,8) ...
-            y(1) y(2) y(1)^3 (y(1)^2)*y(2) y(1)*(y(2)^2) y(2)^3 ...
-            rpm^2 sec(delta)*tan(delta) sec(delta) ...
-            zeros(1,5);
+    Phi = [
+        % ---- Eq (4.27): v_dot ---- (3 + 8 = 11)
+        y(1)  y(2)  delta  zeros(1,8);
 
-            % ---- Eq 3 ----
-            zeros(1,17) cos(y(5)) y(1)*sin(y(5)) zeros(1,3);
+        % ---- Eq (4.28): r_dot ---- (3 + 3 + 5 = 11)
+        zeros(1,3)  y(1)  y(2)  delta  zeros(1,5);
 
-            % ---- Eq 4 ----
-            zeros(1,19) sin(y(5)) y(1)*cos(y(5)) zeros(1,1);
+        % ---- Eq (4.29): x_dot ---- (6 + 2 + 3 = 11)
+        zeros(1,6)  cos(y(5))  -y(1)*sin(y(5))  zeros(1,3);
 
-            % ---- Eq 5 ----
-            zeros(1,21) y(2)
-        ];
+        % ---- Eq (4.30): y_dot ---- (8 + 2 + 1 = 11)
+        zeros(1,8)  sin(y(5))   y(1)*cos(y(5))  zeros(1,1);
 
-        %% ===== ADAPTIVE OBSERVER =====
-        Ks = Ps / (Ps + Rs);
-        Kt = (Pt * Gamma') / (Gamma * Pt * Gamma' + Rt);
-        Gamma = (eye(n) - Ks) * Gamma;
+        % ---- Eq (4.31): psi_dot ---- (10 + 1 = 11)
+        zeros(1,10) y(2)
+    ];
 
-        sbar = sbar + (Ks + Gamma * Kt) * (y - sbar);
-        thetabar = thetabar - Kt * (y - sbar);
+    % Cek ukuran
+    % disp(size(Phi))  % harus 5 x 11
 
-        sbar = sbar + Phi * thetabar;
-        Ps = (eye(n) - Ks) * Ps;
-        Pt = (eye(r) - Kt * Gamma) * Pt;
-        Gamma = Gamma - Phi;
-    end
+    %% ===== ADAPTIVE OBSERVER (TIDAK DIUBAH) =====
+
+    Ks = Ps*inv(Ps+Rs);
+    Kt = Pt*Gamma' / (Gamma*Pt*Gamma' + Rt);
+    Gamma = (eye(n)-Ks)*Gamma;
+
+    sbar = sbar + (Ks+Gamma*Kt)*(y-sbar);
+    thetabar = thetabar - Kt*(y-sbar);
+
+    sbar = sbar + Phi*thetabar;
+    thetabar = thetabar;
+    Ps = (1/lambdav)*(eye(n)-Ks)*Ps;
+    Pt = (1/lambdat)*(eye(r)-Kt*Gamma)*Pt;
+    Gamma = Gamma - Phi;
+
 end
 
 %% ==============================
@@ -273,7 +259,7 @@ y_meas_posY = DATAMSD(4,:)*L;        % posisi Y terukur (meter)
 y_est_posY  = sbarArray(4,:)*L;      % posisi Y hasil WyNDA
 
 r_meas = DATAMSD(2,:)*U/L;             % yaw rate terukur (rad/s)
-r_est  = sbarArray(2,:)&U/L;           % yaw rate hasil WyNDA
+r_est  = sbarArray(2,:)*U/L;           % yaw rate hasil WyNDA
 
 %% ==============================
 % Plot Posisi Y (meter)
@@ -316,13 +302,13 @@ xlabel('Time (s)')
 %%
 figure(6)
 
-rows = 5;
-cols = 5;
+rows = 4;
+cols = 3;
 
 for k = 1:r
     subplot(rows,cols,k)
-    plot(t,thetabarArray(k,:),'-b','LineWidth',5);
-    set(gca,'color','white','LineWidth',2,'FontSize',14)
+    plot(t,thetabarArray(k,:),'-b','LineWidth',3);
+    set(gca,'color','white','LineWidth',2,'FontSize',12)
     grid on; grid minor;
     title(['\theta_{' num2str(k) '}'])
 end

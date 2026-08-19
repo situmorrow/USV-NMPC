@@ -29,7 +29,7 @@ fprintf('=======================================================================
 %  1. READ & PREPROCESS DATA EKSPERIMEN CSV
 % =========================================================================
 
-csvPath = 'DATA_FIKS.csv';
+csvPath = 'DATA_turning.csv';
 if ~exist(csvPath, 'file')
     if exist(fullfile('WyNDA model citra', 'DATA_FIKS.csv'), 'file')
         csvPath = fullfile('WyNDA model citra', 'DATA_FIKS.csv');
@@ -109,28 +109,28 @@ u_0_nd = 1.0;        % Kecepatan surge nondimensional
 
 % Vektor Parameter Theta Hasil Identifikasi WyNDA
 theta = [
-   -1.6439e-01;  % theta_1  : v'
-    4.1685e-02;  % theta_2  : r'
-    1.3386e-02;  % theta_3  : (v')^3
-   -4.5468e-02;  % theta_4  : (v')^2 * r'
-   -1.6596e-02;  % theta_5  : v' * (r')^2
-    4.1106e-02;  % theta_6  : (r')^3
-   -1.5186e-02;  % theta_7  : sec(delta)
-    4.1685e-02;  % theta_8  : u0' * r'
-   -1.3278e-02;  % theta_9  : v' pada r_dot
-   -1.3099e-02;  % theta_10 : r' pada r_dot
-    1.3244e-02;  % theta_11 : (v')^3 pada r_dot
-    3.4437e-03;  % theta_12 : (v')^2 * r' pada r_dot
-   -1.5281e-03;  % theta_13 : v' * (r')^2 pada r_dot
-   -1.5297e-03;  % theta_14 : (r')^3 pada r_dot
-   -6.7081e-03;  % theta_15 : n^2 (rpm^2)
-   -9.5177e-03;  % theta_16 : sin(delta)*sec^2(delta)
-   -1.0757e-02;  % theta_17 : sec(delta) pada r_dot
-   -4.5827e-02;  % theta_18 : u0' * cos(psi')
-   -5.1850e-02;  % theta_19 : v' * sin(psi')
-   -5.1378e-02;  % theta_20 : u0' * sin(psi')
-    4.3071e-02;  % theta_21 : v' * cos(psi')
-    5.8693e-02   % theta_22 : r' pada psi_dot
+    8.4432e-02;  % theta_1  : v'
+   -4.4805e+00;  % theta_2  : r'
+    6.1347e-02;  % theta_3  : (v')^3
+   -5.0082e-02;  % theta_4  : (v')^2 * r'
+   -2.1848e+00;  % theta_5  : v' * (r')^2
+    1.3424e+01;  % theta_6  : (r')^3
+   -2.3490e+00;  % theta_7  : sec(delta)
+   -4.4805e+00;  % theta_8  : u0' * r'
+   -1.7638e-02;  % theta_9  : v' pada r_dot
+   -1.2227e+00;  % theta_10 : r' pada r_dot
+    1.0978e-03;  % theta_11 : (v')^3 pada r_dot
+    1.0248e-02;  % theta_12 : (v')^2 * r' pada r_dot
+   -2.6548e-02;  % theta_13 : v' * (r')^2 pada r_dot
+    1.7268e+00;  % theta_14 : (r')^3 pada r_dot
+   -1.1049e-01;  % theta_15 : n^2 (rpm^2)
+   -4.2122e-01;  % theta_16 : sin(delta)*sec^2(delta)
+    6.2890e-02;  % theta_17 : sec(delta) pada r_dot
+   -5.8993e-02;  % theta_18 : u0' * cos(psi')
+   -5.1923e-02;  % theta_19 : v' * sin(psi')
+   -5.8495e-02;  % theta_20 : u0' * sin(psi')
+    7.1080e-02;  % theta_21 : v' * cos(psi')
+    6.0110e-02   % theta_22 : r' pada psi_dot
 ];
 
 fprintf('2. Parameter Model WyNDA Terdefinisi (22 Parameter Theta)\n');
