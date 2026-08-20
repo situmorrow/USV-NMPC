@@ -1,0 +1,2 @@
+C:\Strawberry\c\bin\ar.exe qc libstate_observer_lib.a CMakeFiles/state_observer_lib.dir/src/state_observer.cpp.obj
+C:\Strawberry\c\bin\ranlib.exe libstate_observer_lib.a

@@ -1,0 +1,15 @@
+\babel@toc {indonesian}{}\relax 
+\contentsline {section}{\numberline {1}Pengenalan C++: Apa Bedanya dengan MATLAB dan Python?}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Bahasa Interpreter vs Bahasa Kompilasi (Compiled Language)}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Mengenal Pasangan File C++: Header (\texttt {.h} / \texttt {.hpp}) dan Source (\texttt {.cpp})}{2}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Arsitektur Integrasi Proyek \texttt {CPP\_Gabungan}}{3}{section.2}%
+\contentsline {section}{\numberline {3}Rekapitulasi Tahap 1: Integrasi Library Codegen \& Benchmark}{3}{section.3}%
+\contentsline {section}{\numberline {4}Rekapitulasi Tahap 2: Manajemen Waypoint \& Koordinat ENU}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Rumus Matematis Proyeksi WGS84 Geodetik ke ENU}{4}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Rekapitulasi Tahap 3: State Observer \& Kalibrasi Yaw $+180^\circ $}{4}{section.5}%
+\contentsline {section}{\numberline {6}Penjelasan Mendalam Tahap 4: Integrasi Penuh Loop Utama \texttt {main.cpp}}{4}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Arsitektur Siklus Kendali Real-Time 10 Hz}{4}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Pembedahan Kode Loop Utama (\texttt {src/main.cpp})}{4}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Dukungan Argumen Baris Perintah (CLI) untuk Uji Coba}{5}{subsection.6.3}%
+\contentsline {section}{\numberline {7}Kamus Singkat Istilah Teknis (Glosarium)}{6}{section.7}%
+\contentsline {section}{\numberline {8}Rencana Tahapan Selanjutnya (Tahap 5)}{6}{section.8}%

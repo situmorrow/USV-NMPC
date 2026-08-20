@@ -1,0 +1,395 @@
+\documentclass[11pt,a4paper]{article}
+
+% ==============================================================================
+% PAKET-PAKET PENDUKUNG LATEX
+% ==============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[indonesian]{babel}
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
+
+% Konfigurasi Hyperref
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
+}
+
+% Konfigurasi Header & Footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small \textit{Integrasi C++ NMPC USV -- Tahap 1 s.d. 4}}
+\lhead{\small \textit{Panduan Pemula \& Dokumentasi Teknis}}
+\rfoot{\thepage}
+
+% Definisi Warna untuk Code Snippet
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.97,0.98}
+\definecolor{darkblue}{rgb}{0.0,0.2,0.6}
+
+\lstdefinestyle{cppstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=lines
+}
+
+\lstdefinestyle{plainstyle}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    numbers=none,
+    frame=single,
+    rulecolor=\color{gray!40}
+}
+\lstset{style=cppstyle}
+
+% Box Kustom untuk Analogi & Catatan Penting
+\newtcolorbox{analogybox}[1]{
+    colback=blue!5!white,
+    colframe=blue!75!black,
+    fonttitle=\bfseries,
+    title=#1,
+    arc=4mm,
+    boxrule=1pt,
+    breakable
+}
+
+\newtcolorbox{notebox}[1]{
+    colback=green!5!white,
+    colframe=green!60!black,
+    fonttitle=\bfseries,
+    title=#1,
+    arc=4mm,
+    boxrule=1pt,
+    breakable
+}
+
+\newtcolorbox{warnbox}[1]{
+    colback=orange!5!white,
+    colframe=orange!80!black,
+    fonttitle=\bfseries,
+    title=#1,
+    arc=4mm,
+    boxrule=1pt,
+    breakable
+}
+
+% ==============================================================================
+% JUDUL DOKUMEN
+% ==============================================================================
+\title{
+    \vspace{-1.0cm}
+    \Huge \textbf{Penjelasan Lengkap \& Panduan Pemula:}\\[0.3cm]
+    \LARGE Integrasi Algoritma NMPC Kapal Otonom ke dalam Bahasa C++ (\texttt{CPP\_Gabungan})\\[0.2cm]
+    \large \textit{Dokumentasi Teknis: Tahap 1 (Solver NMPC), Tahap 2 (Guidance \& ENU), Tahap 3 (State Observer), \& Tahap 4 (Loop Utama main.cpp)}
+}
+\author{\textbf{Tim Riset Kapal Autonomous (USV)}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Dokumen ini disusun khusus sebagai jembatan pemahaman bagi peneliti atau mahasiswa yang telah terbiasa menggunakan MATLAB namun \textbf{belum familiar dengan pemrograman bahasa C++}. Di dalamnya dijelaskan secara mendalam, konseptual, dan langkah-demi-langkah mengenai perkembangan integrasi perangkat lunak pada repositori \texttt{CPP\_Gabungan}, mencakup: \textbf{Tahap 1} (Penyatuan 124 File Codegen Solver NMPC \& Benchmark Waktu), \textbf{Tahap 2} (Modul Guidance \& Transformasi Koordinat ENU Real-Time), \textbf{Tahap 3} (State Observer, Kalibrasi Offset Yaw $+180^\circ$, dan Normalisasi State Non-Dimensional $5 \times 1$), serta \textbf{Tahap 4} (Modifikasi Loop Utama \texttt{src/main.cpp}, Integrasi Kendali Real-Time 10 Hz, Mode CLI \texttt{--rudder-mode nmpc}, dan Mekanisme Fail-Safe).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ==============================================================================
+% BAB 1: PENGENALAN C++ UNTUK PENGGUNA MATLAB/PYTHON
+% ==============================================================================
+\section{Pengenalan C++: Apa Bedanya dengan MATLAB dan Python?}
+
+Bagi Anda yang terbiasa menulis kode di MATLAB atau Python, berpindah ke C++ seringkali membingungkan karena konsepnya sangat berbeda. Mari kita pahami perbedaan mendasar ini dengan analogi sederhana.
+
+\subsection{Bahasa Interpreter vs Bahasa Kompilasi (Compiled Language)}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{MATLAB dan Python (Interpreted):}
+    Bekerja seperti \textit{penerjemah langsung (interpreter)}. Setiap kali Anda menekan tombol \textit{Run}, ada program penerjemah yang membaca baris demi baris perintah Anda, menerjemahkannya ke bahasa mesin (0 dan 1), lalu mengeksekusinya saat itu juga. 
+    \begin{itemize}
+        \item \textit{Kelebihan:} Mudah ditulis, fleksibel, mudah diuji coba secara interaktif.
+        \item \textit{Kekurangan:} Lambat, boros memori CPU, dan memiliki jeda waktu (\textit{latency}) yang tidak menentu.
+    \end{itemize}
+
+    \item \textbf{Bahasa C++ (Compiled):}
+    Bekerja seperti \textit{koki yang memasak seluruh bahan makanan sampai matang terlebih dahulu sebelum disajikan}. Sebelum program C++ bisa dijalankan di komputer kapal (Mini PC), seluruh kode sumber harus diproses oleh sebuah alat bernama \textbf{Compiler} (misalnya \texttt{g++.exe} atau \texttt{MSVC}). Compiler mengubah seluruh kode menjadi satu file aplikasi yang langsung dimengerti prosesor komputer (\texttt{.exe} di Windows atau file binary di Linux).
+    \begin{itemize}
+        \item \textit{Kelebihan:} \textbf{Sangat cepat (bisa 50--100 kali lebih cepat dari MATLAB)}, sangat hemat daya, dan waktu eksekusinya sangat pasti (\textit{deterministic}).
+        \item \textit{Kekurangan:} Harus dikompilasi terlebih dahulu, dan struktur file harus sangat rapi dan tertata.
+    \end{itemize}
+\end{itemize}
+
+\begin{analogybox}{Analogi Sederhana: Memasak Sendiri vs Membeli Makanan Instan}
+Menjalankan simulasi di MATLAB seperti memasak di dapur mewah: Anda punya banyak alat bantu otomatis, tetapi proses memasaknya butuh waktu lama dan memakan banyak tempat di meja. 
+
+Mengubahnya ke C++ seperti mengemas resep tersebut ke dalam \textbf{ransum makanan siap saji yang super cepat dibuka di lapangan}. Di atas kapal otonom nyata, kita tidak bisa membawa seluruh software MATLAB (yang ukurannya gigabyte dan berat untuk CPU Mini PC), melainkan kita hanya membawa file kecil \texttt{read\_write\_serial.exe} hasil kompilasi C++ yang langsung bekerja secepat kilat.
+\end{analogybox}
+
+\subsection{Mengenal Pasangan File C++: Header (\texttt{.h} / \texttt{.hpp}) dan Source (\texttt{.cpp})}
+
+Di MATLAB, satu fungsi biasanya ditulis dalam satu file \texttt{.m}. Di C++, kode hampir selalu dipisah menjadi \textbf{dua jenis file}:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{File Header (\texttt{.h} atau \texttt{.hpp}): ``Daftar Menu Restoran''}
+    File ini hanya berisi \textit{deklarasi} (daftar nama fungsi, variabel, dan parameter apa saja yang ada), tanpa menuliskan rumus lengkapnya. Tujuannya memberi tahu file lain: \textit{``Hei, saya punya fungsi kendali NMPC dengan nama \texttt{nmpc\_kapal\_waypoint}, inputnya ada 5 array, dan outputnya sudut kemudi''}.
+    
+    \item \textbf{File Source (\texttt{.cpp}): ``Dapur \& Resep Memasak''}
+    File ini berisi \textit{implementasi nyata} (rumus matematika, perulangan for-loop, perhitungan matriks QP, SQP solver). Di sinilah seluruh baris perhitungan algoritma dikerjakan.
+\end{enumerate}
+
+% ==============================================================================
+% BAB 2: ARSITEKTUR INTEGRASI & STRUKTUR FOLDER CPP_GABUNGAN
+% ==============================================================================
+\section{Arsitektur Integrasi Proyek \texttt{CPP\_Gabungan}}
+
+Struktur folder \texttt{CPP\_Gabungan} dibangun sebagai kesatuan utuh aplikasi kendali kapal autonomous:
+
+\begin{lstlisting}[style=plainstyle, caption={Struktur Direktori Proyek CPP\_Gabungan Terkini}]
+CPP_Gabungan/
+|-- CMakeLists.txt              <-- "Resep" kompilasi otomatis (Build System)
+|-- README.md                   <-- Dokumentasi teknis lengkap proyek
+|-- start_read_write_serial.bat <-- Skrip autorun Windows Mini PC di kapal
+|-- include/                    <-- Kumpulan File Header (Daftar Menu Fungsi)
+|   |-- guidance.hpp            <-- [TAHAP 2] Modul Guidance, Proyeksi ENU & Horizon
+|   |-- state_observer.hpp      <-- [TAHAP 3] Estimator State & Kalibrasi Yaw (+180 deg)
+|   |-- serial_port.hpp         <-- Driver komunikasi USB COM Port
+|   |-- telemetry_parser.hpp    <-- Parser data telemetri 8 kolom dari ESP32
+|   +-- processor.hpp           <-- Operasi logika telemetri
+|-- src/                        <-- Kumpulan File Source (Implementasi Rumus)
+|   |-- guidance.cpp            <-- [TAHAP 2] Rumus WGS84->ENU, r_tran & Horizon
+|   |-- state_observer.cpp      <-- [TAHAP 3] Normalisasi State Non-Dim [v',r',x',y',psi]
+|   |-- main.cpp                <-- [TAHAP 4] Loop utama kontroler NMPC & serial bridge
+|   +-- serial_port.cpp         <-- Implementasi driver serial port Windows/Linux
+|-- nmpc/                       <-- Kumpulan 124 File Solver NMPC (MATLAB Codegen)
+|   |-- nmpc_kapal_waypoint.h   <-- Header utama solver NMPC WyNDA
+|   |-- nmpc_kapal_waypoint.cpp <-- Algoritma SQP & Model WyNDA 11 Parameter
+|   |-- fmincon.cpp             <-- Non-linear optimization solver
+|   +-- ... (56 file algoritma optimasi kuadratik lainnya)
++-- tests/                      <-- Modul Pengujian Mandiri (Unit Testing)
+    |-- test_nmpc.cpp           <-- [TAHAP 1] Pengujian benchmark solver NMPC
+    |-- test_guidance.cpp       <-- [TAHAP 2] Pengujian guidance & konversi ENU
+    +-- test_state_observer.cpp <-- [TAHAP 3] Pengujian state observer & kalibrasi yaw
+\end{lstlisting}
+
+% ==============================================================================
+% BAB 3: REKAPITULASI TAHAP 1 (SOLVER NMPC & BENCHMARK)
+% ==============================================================================
+\section{Rekapitulasi Tahap 1: Integrasi Library Codegen \& Benchmark}
+
+Pada Tahap 1, 124 file hasil generate MATLAB Coder berhasil diintegrasikan menjadi sebuah \textbf{Static Library} bernama \texttt{libnmpc\_solver.a} menggunakan CMake dengan flag optimasi \texttt{-O3} dan \texttt{-fopenmp}.
+
+Hasil uji coba \texttt{test\_nmpc.exe} menunjukkan bahwa solver SQP NMPC WyNDA membutuhkan waktu rata-rata hanya \textbf{0.82 milidetik per langkah}. Artinya, pada sistem kendali 10 Hz ($100\text{ ms}$ per siklus), komputer Mini PC memiliki **margin waktu luang 99.18\%**, sehingga beban CPU sangat ringan.
+
+% ==============================================================================
+% BAB 4: REKAPITULASI TAHAP 2 (GUIDANCE & TRANSFORMASI KOORDINAT ENU)
+% ==============================================================================
+\section{Rekapitulasi Tahap 2: Manajemen Waypoint \& Koordinat ENU}
+
+Tahap 2 berfokus pada pembangunan **Modul Guidance** (\texttt{guidance.hpp} dan \texttt{guidance.cpp}) sebagai pemandu rute navigasi.
+
+\subsection{Rumus Matematis Proyeksi WGS84 Geodetik ke ENU}
+Diberikan titik acuan Home Point $(\text{lat}_0, \text{lon}_0)$ dan titik sembarang $(\text{lat}, \text{lon})$:
+\begin{align}
+    \Delta \text{Lat} &= (\text{lat} - \text{lat}_0) \times \frac{\pi}{180}, \quad \Delta \text{Lon} = (\text{lon} - \text{lon}_0) \times \frac{\pi}{180} \\
+    Y_{\text{North}} &= R_{\text{earth}} \times \Delta \text{Lat}, \quad X_{\text{East}} = R_{\text{earth}} \times \cos\left(\text{lat}_0 \times \frac{\pi}{180}\right) \times \Delta \text{Lon}
+\end{align}
+di mana jari-jari bumi rata-rata $R_{\text{earth}} = 6,371,000\text{ meter}$.
+
+Setiap 100 milidetik (10 Hz), posisi GPS kapal saat ini $(\text{lat}_{\text{ship}}, \text{lon}_{\text{ship}})$ dikonversi secara real-time menjadi $(X_{\text{ship}}, Y_{\text{ship}})$ pada koordinat ENU meter sebagai titik tolak pembentukan 20 langkah prediksi lintasan horizon NMPC ($x_{\text{ref\_seq}}$ dan $y_{\text{ref\_seq}}$).
+
+% ==============================================================================
+% BAB 5: REKAPITULASI TAHAP 3 (STATE OBSERVER & KALIBRASI YAW)
+% ==============================================================================
+\section{Rekapitulasi Tahap 3: State Observer \& Kalibrasi Yaw $+180^\circ$}
+
+Tahap 3 bertindak sebagai penerjemah sensor telemetri ESP32-S3:
+\begin{enumerate}
+    \item \textbf{Kalibrasi Orientasi Yaw:} Mengoreksi pergeseran sudut fisik sensor IMU sebesar $+180^\circ$ ($\text{yaw}_{\text{cal}} = (\text{yaw}_{\text{raw}} + 180^\circ) \pmod{360^\circ}$) dan mengonversinya ke sistem ENU ($\psi = \text{wrap\_to\_pi}(\text{yaw}_{\text{cal}} \cdot \pi/180)$).
+    \item \textbf{Vektor State Non-Dimensional WyNDA ($5 \times 1$):}
+    \begin{equation}
+        s = \begin{bmatrix} v' \\ r' \\ x' \\ y' \\ \psi \end{bmatrix} = \begin{bmatrix} v_{\text{sway}} / u_0 \\ (\text{yaw\_rate}_{\text{dps}} \cdot \frac{\pi}{180}) \cdot \frac{L}{u_0} \\ X_{\text{ENU}} / L \\ Y_{\text{ENU}} / L \\ \psi_{\text{ENU}} \end{bmatrix}
+    \end{equation}
+    *(dengan $L = 1.0107\text{ m}$ dan $u_0 = 0.6114\text{ m/s}$)*.
+\end{enumerate}
+
+% ==============================================================================
+% BAB 6: PENJELASAN MENDALAM TAHAP 4 (MODIFIKASI LOOP UTAMA MAIN.CPP)
+% ==============================================================================
+\section{Penjelasan Mendalam Tahap 4: Integrasi Penuh Loop Utama \texttt{main.cpp}}
+
+Tahap 4 adalah tahap penyatuan di mana seluruh modul yang telah dibangun (Serial Communication, State Observer, Guidance Module, dan SQP NMPC Solver) dirangkai ke dalam program eksekutabel utama \texttt{read\_write\_serial.exe}.
+
+\subsection{Arsitektur Siklus Kendali Real-Time 10 Hz}
+
+Kapal beroperasi dengan siklus data 10 Hz (satu kali pertukaran data setiap 100 milidetik). Gambar~\ref{fig:loop_nmpc} mengilustrasikan alur pemrosesan di dalam loop utama \texttt{main.cpp}:
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    block/.style={
+        rectangle, 
+        draw=darkblue, 
+        fill=blue!5!white, 
+        text width=8.5cm, 
+        align=left, 
+        rounded corners=4pt, 
+        line width=0.9pt,
+        inner sep=6pt,
+        font=\footnotesize
+    },
+    arrow/.style={
+        draw=darkblue, 
+        -latex', 
+        line width=1.2pt
+    }
+]
+    \node [block] (step1) {\textbf{1. Serial RX:} Menerima baris CSV telemetri 8 kolom dari ESP32};
+    \node [block, below=0.35cm of step1] (step2) {\textbf{2. Tag [WP] Handler:} Update Home \& Waypoints jika ada rute baru dari darat};
+    \node [block, below=0.35cm of step2] (step3) {\textbf{3. State Observer:} Kalibrasi Yaw $+180^\circ$, hitung $(X_{\text{ship}}, Y_{\text{ship}})$, buat $s[5]$};
+    \node [block, below=0.35cm of step3] (step4) {\textbf{4. Guidance:} Cek $r_{\text{tran}} \le 3.0\text{ m}$, switching WP, buat horizon $N=20$};
+    \node [block, below=0.35cm of step4] (step5) {\textbf{5. Solver NMPC SQP:} Hitung sudut kemudi optimal $u_{\text{opt}}$};
+    \node [block, below=0.35cm of step5] (step6) {\textbf{6. Fail-Safe \& Clamping:} Batasi kemudi $[-35^\circ, +35^\circ]$, fallback jika exitflag $\le 0$};
+    \node [block, below=0.35cm of step6] (step7) {\textbf{7. Serial TX:} Kirim string \texttt{timestamp,rudder\_deg} balik ke ESP32};
+
+    \path [arrow] (step1) -- (step2);
+    \path [arrow] (step2) -- (step3);
+    \path [arrow] (step3) -- (step4);
+    \path [arrow] (step4) -- (step5);
+    \path [arrow] (step5) -- (step6);
+    \path [arrow] (step6) -- (step7);
+\end{tikzpicture}
+\caption{Alur Siklus Kendali Real-Time 10 Hz pada \texttt{src/main.cpp}.}
+\label{fig:loop_nmpc}
+\end{figure}
+
+\subsection{Pembedahan Kode Loop Utama (\texttt{src/main.cpp})}
+
+Berikut adalah potongan inti implementasi loop NMPC pada \texttt{src/main.cpp}:
+
+\begin{lstlisting}[language=C++]
+if (rudder_mode == "nmpc") {
+  // 1. Update State Observer (Kalibrasi Yaw +180 deg & Posisi ENU)
+  usv::ShipState ship_state = observer.update(*row, guidance, u_prev_rad);
+
+  if (guidance.has_home() && !guidance.get_waypoints_enu().empty()) {
+    // 2. Update Guidance & Generator Horizon NMPC
+    auto g_out = guidance.update_guidance(ship_state.x_enu, ship_state.y_enu);
+
+    if (g_out.is_mission_completed) {
+      rudder_cmd_deg = 0.0; // Misi selesai -> kemudi lurus aman
+      u_prev_rad = 0.0;
+    } else {
+      // 3. Eksekusi NMPC WyNDA SQP Solver
+      double u_opt_rad = 0.0;
+      double exitflag = 0.0;
+      nmpc_kapal_waypoint(ship_state.state_nd, u_prev_rad, surge_speed,
+                          g_out.x_ref_seq, g_out.y_ref_seq, g_out.psi_ref_seq,
+                          &u_opt_rad, &exitflag);
+
+      // 4. Mekanisme Fail-Safe
+      if (exitflag <= 0.0) {
+        rudder_cmd_deg = u_prev_rad * 180.0 / M_PI; // Tahan kemudi sebelumnya
+      } else {
+        const double u_opt_deg = u_opt_rad * 180.0 / M_PI;
+        rudder_cmd_deg = clamp_rudder_deg(u_opt_deg, -35.0, 35.0);
+        u_prev_rad = rudder_cmd_deg * M_PI / 180.0;
+      }
+    }
+  } else {
+    rudder_cmd_deg = 0.0; // Menunggu rute waypoint dari operator
+  }
+}
+\end{lstlisting}
+
+\subsection{Dukungan Argumen Baris Perintah (CLI) untuk Uji Coba}
+
+Untuk memudahkan riset dan eksperimen di kolam uji maupun danau, program mendukung berbagai opsi CLI:
+
+\begin{lstlisting}[style=plainstyle]
+# 1. Menjalankan kendali otonom NMPC penuh:
+./read_write_serial.exe --port COM16 --rudder-mode nmpc --print nmpc
+
+# 2. Uji coba dengan 4 Waypoint default tanpa dashboard darat:
+./read_write_serial.exe --port COM16 --rudder-mode nmpc --default-test-wp --print all
+
+# 3. Menyesuaikan parameter fisik kapal secara dinamis:
+./read_write_serial.exe --port COM16 --yaw-offset 180.0 --r-tran 2.5 --surge-speed 0.70
+\end{lstlisting}
+
+Selain itu, skrip autorun \texttt{start\_read\_write\_serial.bat} telah diperbarui agar Mini PC di kapal dapat otomatis mengeksekusi kendali NMPC saat pertama kali dinyalakan.
+
+% ==============================================================================
+% BAB 7: GLOSARIUM ISTILAH TEKNIS (UNTUK PEMULA)
+% ==============================================================================
+\section{Kamus Singkat Istilah Teknis (Glosarium)}
+
+\begin{description}[leftmargin=*, style=nextline]
+    \item[\textbf{Fail-Safe}]
+    Mekanisme pengaman otomatis yang mengambil alih kontrol saat terjadi kegagalan (misalnya solver tidak konvergen atau GPS terputus) agar kapal tidak hilang kendali.
+
+    \item[\textbf{Clamping}]
+    Pembatasan nilai numerik pada batas atas dan batas bawah (misalnya membatasi kemudi di $[-35^\circ, +35^\circ]$ agar motor servo tidak rusak).
+
+    \item[\textbf{Heartbeat (\$HB)}]
+    Sinyal periodik (1 detik sekali) yang dikirim Mini PC ke ESP32 sebagai tanda bahwa komputer kendali aktif dan sehat.
+
+    \item[\textbf{Command Line Interface (CLI)}]
+    Antarmuka baris perintah teks yang memungkinkan pengguna mengatur parameter program saat program pertama kali dipanggil melalui terminal.
+\end{description}
+
+% ==============================================================================
+% BAB 8: LANGKAH SELANJUTNYA (MENUJU TAHAP 5)
+% ==============================================================================
+\section{Rencana Tahapan Selanjutnya (Tahap 5)}
+
+Dengan tuntasnya **Tahap 1, 2, 3, dan 4**, seluruh sistem kendali NMPC di kapal telah terintegrasi secara utuh dan siap jalan. Langkah berikutnya adalah **Tahap 5: Data Logger CSV Komprehensif**:
+
+\begin{enumerate}
+    \item \textbf{Perekaman Log Otomatis (\texttt{logs/nmpc\_log\_YYYYMMDD\_HHMMSS.csv}):}
+    Menyimpan seluruh variabel telemetri, koordinat ENU, sudut target, error pelacakan (*cross-track error* \& *heading error*), serta waktu komputasi SQP setiap 100 ms.
+    
+    \item \textbf{Persiapan Analisis Data Jurnal / Tesis:}
+    Membuat skrip plotting otomatis di Python/MATLAB untuk menghasilkan grafik lintasan trajektori 2D, respon sudut kemudi, dan kestabilan yaw kapal.
+\end{enumerate}
+
+---
+
+\vspace{0.5cm}
+\begin{center}
+\textbf{--- Akhir Dokumen Penjelasan Tahap 1 s.d. 4 ---}\\
+\textit{Disimpan pada berkas: \texttt{USV-NMPC/penjelasan CPP\_Gabungan/penjelasan.tex}}
+\end{center}
+
+\end{document}

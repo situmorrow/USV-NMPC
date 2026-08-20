@@ -1,0 +1,2 @@
+C:\Strawberry\c\bin\ar.exe qc libguidance_lib.a CMakeFiles/guidance_lib.dir/src/guidance.cpp.obj
+C:\Strawberry\c\bin\ranlib.exe libguidance_lib.a
