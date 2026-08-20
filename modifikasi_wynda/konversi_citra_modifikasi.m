@@ -4,7 +4,7 @@
 clear; clc;
 
 %% LOAD DATA
-filename = 'DATA_FIKS.xlsx';
+filename = 'lurus_konstan.xlsx';
 T = readtable(filename);
 
 % Helper konversi ke numerik
@@ -55,7 +55,7 @@ z = ENU(3,:)';   % Up
 
 %% Merubah format data
 % HEADING
-psi = unwrap(deg2rad(yaw_deg));
+psi = unwrap(deg2rad(yaw_deg + 180));
 
 % RUDDER
 delta = deg2rad(delta_deg);

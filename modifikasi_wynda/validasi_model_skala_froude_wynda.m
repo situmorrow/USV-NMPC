@@ -19,7 +19,7 @@ fprintf('=======================================================================
 %  1. READ & PREPROCESS DATA EKSPERIMEN
 % =========================================================================
 
-dataFile = 'hasil_preprocessing_ENU.xlsx';
+dataFile = 'hasil_preprocessing_ENU(lurus).xlsx';
 
 fprintf('1. Membaca data eksperimen dari: %s\n', dataFile);
 data = readtable(dataFile);
@@ -59,25 +59,26 @@ u_0 = u_0_exp;       % Kecepatan surge referensi [m/s]
 u_0_nd = 1.0;        % Kecepatan surge nondimensional
 
 % Vektor Parameter Theta Hasil Identifikasi WyNDA 11 Basis Fungsi:
-% Eq (4.27) -> v_dot   = theta_1*v + theta_2*r + theta_3*delta
-% Eq (4.28) -> r_dot   = theta_4*v + theta_5*r + theta_6*delta
-% Eq (4.29) -> x_dot   = theta_7*u0*cos(psi) - theta_8*v*sin(psi)
-% Eq (4.30) -> y_dot   = theta_9*u0*sin(psi) + theta_10*v*cos(psi)
-% Eq (4.31) -> psi_dot = theta_11*r
+% v_dot   = theta_1*v + theta_2*r + theta_3*delta
+% r_dot   = theta_4*v + theta_5*r + theta_6*delta
+% x_dot   = theta_7*u0*cos(psi) - theta_8*v*sin(psi)
+% y_dot   = theta_9*u0*sin(psi) + theta_10*v*cos(psi)
+% psi_dot = theta_11*r
 
 theta = [
-   -4.5850e-01;  % theta_1  : v pada v_dot
-   -6.4487e-02;  % theta_2  : r pada v_dot
-    2.5817e-02;  % theta_3  : delta pada v_dot
-    7.7122e-04;  % theta_4  : v pada r_dot
-    2.7250e-03;  % theta_5  : r pada r_dot
-   -1.1909e-02;  % theta_6  : delta pada r_dot
-   -5.7266e-02;  % theta_7  : u0*cos(psi)
-   -7.5794e-02;  % theta_8  : v*sin(psi)
-   -9.0402e-03;  % theta_9  : u0*sin(psi)
-   -1.6046e-02;  % theta_10 : v*cos(psi)
-    6.0598e-02   % theta_11 : r pada psi_dot
+   -9.2816e-01;  % theta_1  : v pada v_dot
+   -2.6644e-01;  % theta_2  : r pada v_dot
+    1.2074e-01;  % theta_3  : delta pada v_dot
+    2.6348e-03;  % theta_4  : v pada r_dot
+   -1.0577e-02;  % theta_5  : r pada r_dot
+   -1.3502e-02;  % theta_6  : delta pada r_dot
+    5.8118e-02;  % theta_7  : u0*cos(psi)
+    1.4903e-03;  % theta_8  : v*sin(psi)
+    4.7426e-02;  % theta_9  : u0*sin(psi)
+   -4.6814e-03;  % theta_10 : v*cos(psi)
+    4.5806e-02   % theta_11 : r pada psi_dot
 ];
+
 
 fprintf('2. Parameter Model WyNDA Terdefinisi (11 Parameter Theta)\n');
 fprintf('   Panjang Kapal L = %.4f m | u_0 = %.4f m/s\n\n', L, u_0);

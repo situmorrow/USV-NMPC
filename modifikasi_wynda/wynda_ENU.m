@@ -6,7 +6,7 @@ close all;
 %% ==============================
 % LOAD DATA
 %% ==============================
-DATAMSD = readmatrix('hasil_preprocessing_ENU.xlsx','Sheet','Sheet1')';
+DATAMSD = readmatrix('hasil_preprocessing_ENU(data_FIKS).xlsx','Sheet','Sheet1')';
 
 %% ==============================
 % PARAMETER REFERENSI
@@ -112,16 +112,17 @@ thetabarArray = [];
 uArray        = [];
 
 %% ==============================
-% ESTIMATOR PARAMETER
+% ESTIMATOR PARAMETER (Tabel 4.4: Inisialisasi Nilai Awal Parameter Metode WyNDA)
 %% ==============================
-lambdav = 0.3;
-lambdat = 0.8;
+lambdav = 0.264;          % \lambda_s
+lambdat = 1.0;            % \lambda_\theta
 
-Rs = eye(n);
-Rt = eye(n);
-Ps = 0.1*eye(n);
-Pt = 0.1*eye(r);
-Gamma = zeros(n,r);
+Rs = 0.1 * eye(n);        % R_s(1) = 0.1 * I_5
+Rt = 10 * eye(n);         % R_\theta(1) = 10 * I_5
+Ps = 10 * eye(n);         % P_s(0|-1) = 10 * I_5
+Pt = 1.0 * eye(r);        % P_\theta(0|-1) = 1 * I_11
+Gamma = ones(n, r);       % \Gamma(0|0) = 1 * I_{5x11}
+
 
 %% ==============================
 % MAIN LOOP
